@@ -14,8 +14,12 @@ import (
 
 func main() {
 	// LOGGER SETUP
-	logrus.SetFormatter(&logrus.JSONFormatter{})
+	logrus.SetFormatter(&logrus.JSONFormatter{
+		TimestampFormat: time.RFC3339Nano,
+		PrettyPrint: false,
+	})
 	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.InfoLevel)
 
 	// LOAD CONFIG FROM DOTENV
 	config, err := config.LoadConfig()
@@ -36,14 +40,15 @@ func main() {
 
 	// INIT SERVER
 	srv := server.NewServer(conn)
-	host := os.Getenv("AUTH_SERV_HOST")
-	port := os.Getenv("AUTH_SERV_PORT")
+	host := config.SERV_HOST
+	port := config.SERV_PORT
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
 	http_server := srv.Run(host, port)
 
 	// GRACEFUL SHUTDOWN
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
 	logrus.Info("Shutting down server...")

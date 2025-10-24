@@ -41,8 +41,8 @@ func ConnectPostgres(cfg *config.Config) (*gorm.DB, error) {
 	err = db.AutoMigrate(
 		&models.Apartment{},
 		&models.ApartmentSCD4{},
-		&models.Descriptions{},
-		&models.Descriptions{},
+		&models.Description{},
+		&models.Booking{},
 	)
 
 	if err != nil {

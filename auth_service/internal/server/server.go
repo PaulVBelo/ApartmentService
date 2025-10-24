@@ -14,31 +14,31 @@ import (
 	"gorm.io/gorm"
 )
 
-
 type Server struct {
 	router *gin.Engine
-	db *gorm.DB
+	db     *gorm.DB
 }
 
 func NewServer(db *gorm.DB) *Server {
-	router :=gin.Default()
+	router := gin.Default()
 	s := &Server{
 		router: router,
-		db: db,
+		db:     db,
 	}
 	s.routes()
 	return s
 }
 
 func (s *Server) routes() {
-	s.router.POST("auth/register", s.register)
-	s.router.POST("auth/login", s.login)
+	s.router.POST("/auth/register", s.register)
+	s.router.POST("/auth/login", s.login)
+	s.router.GET("/health", health)
 }
 
 func (s *Server) Run(host, port string) *http.Server {
 	addr := host + ":" + port
 	http_server := http.Server{
-		Addr: addr,
+		Addr:    addr,
 		Handler: s.router,
 	}
 
@@ -54,16 +54,19 @@ func (s *Server) Run(host, port string) *http.Server {
 }
 
 func GracefulShutdown(srv *http.Server, timeout time.Duration) {
-  ctx, cancel := context.WithTimeout(context.Background(), timeout)
-  defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
-  if err := srv.Shutdown(ctx); err != nil {
-    logrus.Errorf("Server forced to shutdown: %v", err)
-  } else {
-    logrus.Info("Server exited gracefully")
-  }
+	if err := srv.Shutdown(ctx); err != nil {
+		logrus.Errorf("Server forced to shutdown: %v", err)
+	} else {
+		logrus.Info("Server exited gracefully")
+	}
 }
 
+func health(c *gin.Context) {
+	c.Status(http.StatusOK)
+}
 
 // =========================================================== REGISTER
 
@@ -90,14 +93,14 @@ func (s *Server) register(c *gin.Context) {
 	}
 
 	user := models.User{
-		ID: uuid.New().String(),
-		Email: dto.Email,
-		EncPass: enc_pass,
+		ID:        uuid.New().String(),
+		Email:     dto.Email,
+		EncPass:   enc_pass,
 		CreatedAt: time.Now(),
 	}
 
 	err = s.db.Create(&user).Error
-	if err!= nil {
+	if err != nil {
 		if errors.Is(err, gorm.ErrCheckConstraintViolated) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email format"})
 			logrus.WithField("Time", time.Now().String()).Info("400: Invalid email format")

@@ -12,7 +12,10 @@ type Repository interface {
 	UpdateApartmentHeavy(id string, dto *dtos.ApartmentHeavyUpdateDTO) error
 
 	GetApartments(filter map[string]string) (*[]models.Apartment, error) // empty, if no filter
-	GetApartment(id string) (models.Apartment, error)
+	GetApartment(id string) (models.Apartment, []dtos.BookingRange, error)
 
 	CreateBooking(dto *dtos.BookingCreateDTO) (models.Booking, error)
+
+	GetApartmentsByOwner(id string) (*[]models.Apartment, error)
+	GetBookingsByUser(id string) (*[]models.Booking, error)
 }

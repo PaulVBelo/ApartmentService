@@ -1,27 +1,48 @@
-# -------- BUILD STAGE --------
-FROM golang:1.24-alpine AS builder
+# ---------- BUILD STAGE ----------
+# Можно собрать под любую платформу: docker buildx ...
+ARG GO_VERSION=1.24.8
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS builder
 
-WORKDIR /app
+ENV GOTOOLCHAIN=auto \
+    CGO_ENABLED=0
 
-# Аргумент для выбора сервиса при сборке
+# Включим кэш модулей и базовые утилиты
+RUN apk add --no-cache git build-base
+
+# Имя сервисной папки передаём аргументом
+# Пример: --build-arg SERVICE=auth_service
 ARG SERVICE
+ARG TARGETOS
+ARG TARGETARCH
 
-COPY ${SERVICE}/go.mod ${SERVICE}/go.sum ./
+# Рабочая директория = корень репо
+WORKDIR /src
+
+# Сначала тянем только мод-файлы, чтобы кэшировались зависимости
+# Структура ожидается: <repo>/<SERVICE>/go.mod, go.sum, cmd/main.go, internal/...
+COPY ${SERVICE}/go.mod ${SERVICE}/go.sum ${SERVICE}/
+WORKDIR /src/${SERVICE}
 RUN go mod download
 
+# Теперь копируем исходники сервиса и собираем статический бинарь
 COPY ${SERVICE}/ ./
 
-RUN go build -o /bin/${SERVICE} ./cmd/main.go
+ENV CGO_ENABLED=0
+RUN GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} \
+    go build -ldflags "-s -w" -o /out/app ./cmd
 
-# -------- RUNTIME STAGE --------
+# ---------- RUNTIME STAGE ----------
 FROM alpine:3.20
 
+# Полезные пакеты в рантайме (логирование времени, TLS, healthcheck через wget/curl)
+RUN apk add --no-cache ca-certificates tzdata curl
+
+# Кладём бинарь в фиксированный путь
+COPY --from=builder /out/app /usr/local/bin/app
+
+# Непривилегированный пользователь
+USER 10001:10001
 WORKDIR /app
 
-ARG SERVICE
-COPY --from=builder /bin/${SERVICE} /usr/local/bin/${SERVICE}
-RUN apk add --no-cache tzdata
-
-ENV GIN_MODE=release
-
-CMD ["/bin/sh", "-c", "${SERVICE}"]
+# Жёстко заданный entrypoint (без переменных!)
+ENTRYPOINT ["/usr/local/bin/app"]
