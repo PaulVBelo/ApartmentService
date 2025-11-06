@@ -157,7 +157,7 @@ func (s *Server) login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"status": "logged_in", "user_id": user.ID})
+	c.JSON(http.StatusOK, gin.H{"status": "logged_in", "user_id": user.ID})
 	logrus.WithField("Time", time.Now().String()).WithFields(logrus.Fields{
 		"user_id": user.ID, "email": user.Email,
 	}).Info("200: Logged in")
