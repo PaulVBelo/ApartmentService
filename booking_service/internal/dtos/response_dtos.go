@@ -42,7 +42,7 @@ type BookingResponse struct {
 	Id          string    `json:"id" binding:"required,uuid4"`
 	UserID      string    `json:"user_id" binding:"required,uuid4"`
 	ApartmentID string    `json:"ap_id" binding:"required,uuid4"`
-	Address     string    `json:"address" binding:"required,uuid4"`
+	Address     string    `json:"address" binding:"required"`
 	TimeFrom    time.Time `json:"time_from" binding:"required"`
 	TimeTo      time.Time `json:"time_to" binding:"required,gtfield=TimeFrom"`
 }
