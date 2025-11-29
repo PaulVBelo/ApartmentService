@@ -217,7 +217,7 @@ func (s *InnerServer) getApartmentsFiltered(c *gin.Context) {
 	for _, ap := range *aps {
 		response = append(response, dtos.ShortApartmentResponse{
 			Id:      ap.ID,
-			OwnerID: ap.ID,
+			OwnerID: ap.OwnerID,
 			Address: ap.Address,
 			Price:   ap.Price,
 		})

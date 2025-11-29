@@ -306,7 +306,7 @@ func (r *repositoryWithTM) UpdateApartmentHeavy(id string, dto *dtos.ApartmentHe
 
 func (r *repositoryWithTM) GetApartments(filter map[string]string) (*[]models.Apartment, error) {
 	var apartments []models.Apartment
-	db := r.tm.db.Model(&models.Apartment{})
+	db := r.tm.db.Model(&models.Apartment{}).Distinct("apartments.*")
 
 	if city, ok := filter["city"]; ok && city != "" {
 		db = db.Where("split_part(address, ',', 1) ILIKE ?", "%"+city+"%")
